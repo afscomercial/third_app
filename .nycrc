@@ -1,0 +1,13 @@
+{
+    "lines": 30,
+    "statements": 30,
+    "functions": 30,
+    "branches": 0,
+    "include": [
+      "server/controllers/**.js"
+    ],
+    "exclude": [
+      "**/index.js"
+    ],
+    "check-coverage": true
+}
