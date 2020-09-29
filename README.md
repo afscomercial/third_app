@@ -1,4 +1,4 @@
-# My CLI App
+# Third App
 
 ## Installation
 
