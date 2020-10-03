@@ -1,6 +1,8 @@
 import { logsEnum, writeLog } from './logger';
 import { registerWebhook } from '@shopify/koa-shopify-webhooks';
 
+var retries = 0;
+
 export const registerWebhooks = async (shop, accessToken, type, url, apiVersion) => {
   const registration = await registerWebhook({
     address: `${process.env.HOST}${url}`,
@@ -11,11 +13,17 @@ export const registerWebhooks = async (shop, accessToken, type, url, apiVersion)
   });
 
   if (registration.success) {
-    writeLog(logsEnum.warn, `> Successfully registered webhook!`);
+    writeLog(logsEnum.warn, `> SUCCESSFULLY registered webhook ${type} from ${shop}`);
   } else {
-    writeLog(
-      logsEnum.info,
-      `> Failed to register webhook ${registration.result.data.webhookSubscriptionCreate}`,
-    );
+    if (retries < 1) {
+      retries++;
+      registerWebhooks(shop, accessToken, type, url, apiVersion);
+    } else {
+      writeLog(
+        logsEnum.error,
+        `> FAILED to register webhook ${type} from ${shop} error ${registration.result.data.webhookSubscriptionCreate.userErrors.message} retry ${retries}`,
+      );
+      retries = 0;
+    }
   }
 };

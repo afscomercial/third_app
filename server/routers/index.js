@@ -1,3 +1,1 @@
-import { routers } from './router';
-
-export { routers };
+export * from './router';

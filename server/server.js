@@ -1,28 +1,26 @@
 import '@babel/polyfill';
-import dotenv from 'dotenv';
+import dotenv from 'dotenv/config';
 import 'isomorphic-fetch';
 import createShopifyAuth from '@shopify/koa-shopify-auth';
 import graphQLProxy, { ApiVersion } from '@shopify/koa-shopify-graphql-proxy';
 import Koa from 'koa';
 import next from 'next';
 import session from 'koa-session';
+import { environment, webhooksOctober19, webhooksApril20 } from './config';
 import { errorHandler, logsEnum, httpLogger, registerWebhooks, writeLog } from './handlers';
 import { routers } from './routers';
 import { receiveWebhook } from '@shopify/koa-shopify-webhooks';
-
-dotenv.config();
-const dev = process.env.NODE_ENV !== 'production';
-const port = parseInt(process.env.PORT, 10) || 8081;
+const dev = environment.env !== 'production';
 const app = next({
   dev,
 });
 const handle = app.getRequestHandler();
-const { SHOPIFY_API_SECRET, SHOPIFY_API_KEY, SCOPES } = process.env;
+const { port, shopifyApiSecret, shopifyApiKey, scopes } = environment;
 app.prepare().then(() => {
   const server = new Koa();
   server.use(errorHandler());
   const webhook = receiveWebhook({
-    secret: SHOPIFY_API_SECRET,
+    secret: shopifyApiSecret,
   });
 
   server.use(
@@ -34,22 +32,28 @@ app.prepare().then(() => {
       server,
     ),
   );
-  server.keys = [SHOPIFY_API_SECRET];
+  server.keys = [shopifyApiSecret];
   server.use(
     createShopifyAuth({
-      apiKey: SHOPIFY_API_KEY,
-      secret: SHOPIFY_API_SECRET,
-      scopes: [SCOPES],
+      apiKey: shopifyApiKey,
+      secret: shopifyApiSecret,
+      scopes: [scopes],
       async afterAuth(ctx) {
         const { shop, accessToken } = ctx.session;
-        await registerWebhooks(
-          shop,
-          accessToken,
-          'PRODUCTS_CREATE',
-          '/webhooks/products/create',
-          ApiVersion.October19,
-        );
+        let defaultWebhooks = [];
+        switch (environment.apiVersion) {
+          case ApiVersion.October19:
+            defaultWebhooks = webhooksOctober19;
+            break;
 
+          case ApiVersion.April20:
+            defaultWebhooks = webhooksApril20;
+            break;
+        }
+
+        for (const webhook of defaultWebhooks) {
+          await registerWebhooks(shop, accessToken, webhook.name, webhook.route, webhook.apiVersion);
+        }
         ctx.cookies.set('shopOrigin', shop, {
           httpOnly: false,
           secure: true,

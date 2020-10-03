@@ -4,7 +4,7 @@ import * as initControllers from '../controllers/index';
 
 export const routers = (handle, webhook) => {
   return new Router()
-    .post('/webhooks/products/create', webhook, initControllers.webhook)
+    .post('/webhooks/(.*)', webhook, initControllers.webhook)
     .get('/status', initControllers.status)
     .get('*', verifyRequest(), async (ctx) => {
       await handle(ctx.req, ctx.res);

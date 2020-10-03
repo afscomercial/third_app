@@ -1,9 +1,8 @@
 import axios from 'axios';
 import { logsEnum, writeLog } from '../handlers';
-import dotenv from 'dotenv';
-dotenv.config();
+import { environment } from '../config';
 
-const baseURL = process.env.BASE_CALL_URL;
+const baseURL = environment.baseURL;
 let axiosInstance = axios.create();
 
 axiosInstance.interceptors.request.use(

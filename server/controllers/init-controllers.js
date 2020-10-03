@@ -1,19 +1,18 @@
 import { logsEnum, writeLog } from '../handlers';
 import { post } from '../services';
-import dotenv from 'dotenv';
-dotenv.config();
+import { environment } from '../config';
 
-const dev = process.env.NODE_ENV !== 'production';
+const dev = environment.env !== 'production';
 
 var countMap = new Map();
-function countLog(name) {
+function countLog(name, domain) {
   if (countMap.has(name)) {
     let count = countMap.get(name);
     countMap.set(name, { value: ++count.value });
   } else {
-    countMap.set(countMap.set(name, { value: 1 }));
+    countMap.set(countMap.set(name, { value: 1, domain: domain }));
   }
-  writeLog(logsEnum.info, `> ${name} event # : ${countMap.get(name).value}`);
+  writeLog(logsEnum.info, `> ${name} event # : ${countMap.get(name).value} from ${domain}`);
 }
 
 export const status = async (ctx) => {
@@ -29,8 +28,9 @@ export const status = async (ctx) => {
 };
 
 export const webhook = (ctx) => {
-  console.log('received webhook: ', ctx.state.webhook);
+  let webhook = ctx.state.webhook;
   if (dev) {
-    countLog('PRODUCTS_CREATE');
+    countLog(webhook.topic, webhook.domain);
+    console.log(JSON.stringify(webhook));
   }
 };

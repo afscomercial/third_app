@@ -1,8 +1,7 @@
 import pino from 'pino';
-import dotenv from 'dotenv';
-dotenv.config();
+import { environment } from '../config';
 
-const writeLogs = 'WRITE_LOGS' in process.env ? true : false;
+const writeLogs = environment.writeLogs;
 
 const dest = pino.destination({
   dest: './logs/info.log',
@@ -27,7 +26,7 @@ function writtenLog() {
     const { lastMsg, lastLevel, lastTime } = dest;
     console.log('Logged message "%s" at level %d at time %s', lastMsg, lastLevel, lastTime);
   }
-};
+}
 
 const handler = pino.final(logger, (err, finalLogger, evt) => {
   finalLogger.info(`${evt} caught`);
@@ -56,6 +55,10 @@ export const writeLog = (type, message) => {
       break;
     case logsEnum.error:
       logger.error(message);
+      writtenLog();
+      break;
+    case logsEnum.warn:
+      logger.warn(message);
       writtenLog();
       break;
     default:

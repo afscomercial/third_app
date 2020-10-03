@@ -1,3 +1,1 @@
-import { post } from './axios-service';
-
-export { post };
+export * from './axios-service';
