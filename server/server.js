@@ -22,7 +22,6 @@ app.prepare().then(() => {
   const webhook = receiveWebhook({
     secret: shopifyApiSecret,
   });
-
   server.use(
     session(
       {
@@ -38,9 +37,11 @@ app.prepare().then(() => {
       apiKey: shopifyApiKey,
       secret: shopifyApiSecret,
       scopes: [scopes],
+
       async afterAuth(ctx) {
         const { shop, accessToken } = ctx.session;
         let defaultWebhooks = [];
+
         switch (environment.apiVersion) {
           case ApiVersion.October19:
             defaultWebhooks = webhooksOctober19;
@@ -52,8 +53,16 @@ app.prepare().then(() => {
         }
 
         for (const webhook of defaultWebhooks) {
-          await registerWebhooks(shop, accessToken, webhook.name, webhook.route, webhook.apiVersion);
+          await registerWebhooks(
+            shop,
+            accessToken,
+            webhook.name,
+            webhook.route,
+            webhook.apiVersion,
+            defaultWebhooks.length,
+          );
         }
+
         ctx.cookies.set('shopOrigin', shop, {
           httpOnly: false,
           secure: true,
