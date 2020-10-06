@@ -1,7 +1,7 @@
 import { logsEnum, writeLog } from './logger';
 import { registerWebhook } from '@shopify/koa-shopify-webhooks';
+import { uninstallApp } from '../services';
 
-var retries = 1;
 var countMap = new Map();
 function countLog(shop, type, webhooksLength) {
   if (countMap.has(shop)) {
@@ -37,15 +37,10 @@ export const registerWebhooks = async (shop, accessToken, type, url, apiVersion,
   if (registration.success) {
     countLog(shop, type, webhooksLength);
   } else {
-    if (retries < 2) {
-      retries++;
-      registerWebhooks(shop, accessToken, type, url, apiVersion);
-    } else {
-      writeLog(
-        logsEnum.error,
-        `> FAILED to register webhook ${type} from ${shop} error ${registration.result.data.webhookSubscriptionCreate.userErrors.message} retry ${retries}`,
-      );
-      retries = 0;
-    }
+    writeLog(logsEnum.error, `> FAILED to register webhook ${type} from ${shop}`);
+    countMap.set(countMap.set(shop, { value: 0 }));
+    await uninstallApp(shop, accessToken);
+    writeLog(logsEnum.info, `> UNINSTALLED app from ${shop}`);
+    return 'error';
   }
 };

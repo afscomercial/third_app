@@ -6,7 +6,7 @@ import graphQLProxy, { ApiVersion } from '@shopify/koa-shopify-graphql-proxy';
 import Koa from 'koa';
 import next from 'next';
 import session from 'koa-session';
-import { environment, webhooksOctober19, webhooksApril20 } from './config';
+import { environment, webhooksOctober19, webhooksApril20, webhooksJuly20 } from './config';
 import { errorHandler, logsEnum, httpLogger, registerWebhooks, writeLog } from './handlers';
 import { routers } from './routers';
 import { receiveWebhook } from '@shopify/koa-shopify-webhooks';
@@ -41,6 +41,7 @@ app.prepare().then(() => {
       async afterAuth(ctx) {
         const { shop, accessToken } = ctx.session;
         let defaultWebhooks = [];
+        let successRegister;
 
         switch (environment.apiVersion) {
           case ApiVersion.October19:
@@ -50,10 +51,13 @@ app.prepare().then(() => {
           case ApiVersion.April20:
             defaultWebhooks = webhooksApril20;
             break;
-        }
 
+          case ApiVersion.July20:
+            defaultWebhooks = webhooksJuly20;
+            break;
+        }
         for (const webhook of defaultWebhooks) {
-          await registerWebhooks(
+          successRegister = await registerWebhooks(
             shop,
             accessToken,
             webhook.name,
@@ -61,20 +65,26 @@ app.prepare().then(() => {
             webhook.apiVersion,
             defaultWebhooks.length,
           );
+          if (successRegister == 'error') {
+            break;
+          }
         }
-
-        ctx.cookies.set('shopOrigin', shop, {
-          httpOnly: false,
-          secure: true,
-          sameSite: 'none',
-        });
-        ctx.redirect('/');
+        if (successRegister == 'error') {
+          ctx.redirect(`https://${shop}/admin/apps`);
+        } else {
+          ctx.cookies.set('shopOrigin', shop, {
+            httpOnly: false,
+            secure: true,
+            sameSite: 'none',
+          });
+          ctx.redirect('/');
+        }
       },
     }),
   );
   server.use(
     graphQLProxy({
-      version: ApiVersion.October19,
+      version: environment.apiVersion,
     }),
   );
   server.use(httpLogger());

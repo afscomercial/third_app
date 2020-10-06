@@ -3,7 +3,7 @@ import { logsEnum, writeLog } from '../handlers';
 import { environment } from '../config';
 
 const baseURL = environment.baseURL;
-let axiosInstance = axios.create();
+export let axiosInstance = axios.create();
 
 axiosInstance.interceptors.request.use(
   (request) => {
@@ -53,9 +53,17 @@ axiosInstance.interceptors.response.use(
   },
 );
 
-export function post(path, body) {
-  return axiosInstance
-    .post(`${baseURL}${path}`, body)
+export function postRequest(path, body) {
+  return request(`${baseURL}${path}`, {method:'post', body});
+}
+
+export function request(url, {method, body, headers} = {}) {
+  return axiosInstance({
+    method: method,
+    url: url,
+    data: body,
+    headers: headers,
+  })
     .then((response) => {
       return response.data;
     })

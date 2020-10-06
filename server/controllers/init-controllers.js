@@ -1,5 +1,5 @@
 import { logsEnum, writeLog } from '../handlers';
-import { post } from '../services';
+import { postRequest } from '../services';
 import { environment } from '../config';
 
 const dev = environment.env !== 'production';
@@ -17,7 +17,7 @@ function countLog(name, domain) {
 
 export const status = async (ctx) => {
   writeLog(logsEnum.info, `> STATUS Alive`);
-  const data = await post('/my/api/path', { data: 'satus' });
+  const data = await postRequest('/my/api/path', { data: 'status' });
   const response = ctx;
   ctx.status = 200;
   ctx.body = {
